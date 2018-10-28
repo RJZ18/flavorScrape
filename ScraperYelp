@@ -1,0 +1,60 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+import datetime
+from time import gmtime, strftime
+from time import sleep
+from pathlib import Path
+
+# GLOBAL VARIABLES
+filepath = r'C:\Data'
+snapshotDate = gmtime()
+snapshotDateString = strftime("%Y%m%d", snapshotDate)
+snapshotDateStringFile = strftime("%Y%m%d_%H%M%S", snapshotDate)
+fileName = '\YelpMostRated_'+ snapshotDateStringFile + '.txt'
+outputFile = filepath + fileName
+
+#fileName = r'C:\Data\YelpMostRated.txt'
+
+
+# FUNCTION DEFINITIONS
+def append_row(snapshotdatetime, RestaurantName, StarRating, ReviewCount, Neightborhood):
+    with open(outputFile, 'a') as outFile:
+        outFile.write(snapshotdatetime + '\t' + RestaurantName + '\t' + StarRating + '\t' + ReviewCount + '\t' + Neightborhood + '\n')
+
+
+# INSER HEADER ROW
+append_row('SNAPSHOT_DATE', 'RESTAURANT_NAME', 'STAR_RATING', 'REVIEW_COUNT', 'NEIGHBORHOOD')
+
+# SETTING CRAWLER 960 is Yelp limit
+mainLink = 'https://www.yelp.com/search?find_desc=Restaurants&find_loc=Chicago%2C%20IL&sortby=review_count&start='
+
+counter = 0
+while counter <= 0:
+    link = mainLink + str(counter)
+    print(link)
+    r = requests.get(link)
+    soup = BeautifulSoup(r.text, "html.parser")
+    # mainPage = soup.find("div", id="wrap")
+    # results = mainPage.find_all("li", class_="regular-search-result")
+    results = soup.find_all("li", class_="regular-search-result")
+
+    if results:
+        for row in results:
+            RestaurantName = row.find("div", class_="main-attributes").a.span.string
+            StarRatingFull = (row.find("div", class_="main-attributes").find("div", class_=re.compile("i-stars i-stars"))['title'])
+            StarRating = StarRatingFull[:3]
+            ReviewCountFull = (row.find("div", class_="main-attributes").find("span", class_="review-count rating-qualifier")).string.strip()
+            ReviewCount = str([int(s) for s in ReviewCountFull.split() if s.isdigit()][0])
+            try:
+                Neighborhood = (row.find("div", class_="secondary-attributes").find("span", class_= "neighborhood-str-list")).string.strip()
+            except(AttributeError):
+                Neighborhood = "UNKNOWN"
+            try:
+                append_row(snapshotDateString, RestaurantName, StarRating, ReviewCount, Neighborhood)
+            except:
+                print(RestaurantName+' ' + ReviewCount + ' ' + StarRating + ' ' + Neighborhood)
+        counter += 30
+    else:
+        counter += 0
+    sleep(30)
