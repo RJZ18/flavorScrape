@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "namespace": "example",
+  "name": "Fullname",                      
+  "fields" : [
+    {"name": "product_id", "type": "long"},             
+    {"name": "product_name", "type": "string"}             
+  ]
+}
