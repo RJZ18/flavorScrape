@@ -1,0 +1,33 @@
+# Imports the Google Cloud client library
+from google.cloud import bigquery
+
+# Instantiates a client
+GOOGLE_APPLICATION_CREDENTIALS = <ENTER LOCATION OF JSON FILE>
+bigquery_client = bigquery.Client.from_service_account_json(GOOGLE_APPLICATION_CREDENTIALS)
+
+# Set env variables
+file_uri = 'gs://firstproject-218715.appspot.com/yelp_fusion_bizs_20181201_091359.avro'
+dataset_id = 'TestDataset'
+#table_id = 'YELP_REVIEWS_FULL'
+table_id_avro = 'YELP_REVIEWS_FULL_AVRO'
+
+# Set runtime variables
+dataset_ref = bigquery_client.dataset(dataset_id)
+
+
+#table_id_avro = 'YELP_REVIEWS_FULL_AVRO'
+table_ref_avro = dataset_ref.table(table_id_avro)
+
+job_config_avro = bigquery.LoadJobConfig()
+job_config_avro.source_format = bigquery.SourceFormat.AVRO
+job_config_avro.write_disposition = "WRITE_TRUNCATE"
+job_avro = bigquery_client.load_table_from_uri(
+            file_uri,
+            table_ref_avro,
+            job_config=job_config_avro
+)
+
+job_avro.result()
+
+print('Loaded {} rows into {}:{}.'.format(
+    job_avro.output_rows, dataset_id, table_id_avro))
